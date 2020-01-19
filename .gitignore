@@ -12,6 +12,7 @@
 
 # Idea Folders
 .idea
+out
 
 # Package Files #
 *.jar
