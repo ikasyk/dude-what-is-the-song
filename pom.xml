@@ -15,7 +15,7 @@
 	<description>Another song searcher man. Let it go man, let it go</description>
 
 	<properties>
-		<java.version>11</java.version>
+		<java.version>8</java.version>
 	</properties>
 
 	<dependencies>
