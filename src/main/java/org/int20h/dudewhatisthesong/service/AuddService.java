@@ -11,10 +11,19 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Objects;
+
 @Service
 public class AuddService {
-    public static final String AUDD_BASE_URL = "https://api.audd.io";
-    public static final String AUDD_RETURN_MUSIC_TYPES = "apple_music,deezer,spotify";
+
+    @Value("${audd.base-url}")
+    public String auddBaseUrl;
+
+    @Value("${audd.find-by-lyrics-url}")
+    public String auddFindByLyricsUrl;
+
+    @Value("${audd.return-music-service-list-url}")
+    public String auddMusicServiceList;
 
     @Value("${audd.api-token}")
     private String auddApiToken;
@@ -25,10 +34,9 @@ public class AuddService {
     @Autowired
     private RequestsHelper requestsHelper;
 
-    public Song findMusicByFile(Resource resource) {
+    public Song findSongByLyrics(String lyrics) {
         MultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
-        params.add("file", resource);
-        params.add("return", AUDD_RETURN_MUSIC_TYPES);
+        params.add("q", lyrics);
         params.add("api_token", auddApiToken);
 
         HttpHeaders headers = new HttpHeaders();
@@ -37,23 +45,44 @@ public class AuddService {
         requestsHelper.fixRequestUserAgent(headers);
 
         HttpEntity<?> httpEntity = new HttpEntity<>(params, headers);
-        ResponseEntity<AuddMusicRecongnitionResponse> response = restTemplate.exchange(AUDD_BASE_URL, HttpMethod.POST, httpEntity, AuddMusicRecongnitionResponse.class);
+        ResponseEntity<AuddMusicRecongnitionResponse> response = restTemplate.exchange(
+                auddBaseUrl + auddFindByLyricsUrl,
+                HttpMethod.POST,
+                httpEntity,
+                AuddMusicRecongnitionResponse.class);
 
-        AuddMusicRecongnitionResponse body = response.getBody();
+        return mapAuddResponseToSong(response.getBody());
+    }
 
-        return mapAuddResponseToSong(body);
+    public Song findSongByFile(Resource resource) {
+        MultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
+        params.add("file", resource);
+        params.add("return", auddMusicServiceList);
+        params.add("api_token", auddApiToken);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        requestsHelper.fixRequestUserAgent(headers);
+
+        HttpEntity<?> httpEntity = new HttpEntity<>(params, headers);
+        ResponseEntity<AuddMusicRecongnitionResponse> response = restTemplate.exchange(
+                auddBaseUrl,
+                HttpMethod.POST,
+                httpEntity,
+                AuddMusicRecongnitionResponse.class);
+
+        return mapAuddResponseToSong(response.getBody());
     }
 
     private Song mapAuddResponseToSong(AuddMusicRecongnitionResponse response) {
         AuddMusicRecongnitionResponse.Result result = response.getResult();
 
-        Song song = new Song(
+        return new Song(
                 result.getArtist(),
                 result.getTitle(),
                 result.getAlbum(),
                 result.getAppleMusic().getUrl()
         );
-
-        return song;
     }
 }

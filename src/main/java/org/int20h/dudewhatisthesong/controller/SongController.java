@@ -5,10 +5,7 @@ import org.int20h.dudewhatisthesong.entity.Song;
 import org.int20h.dudewhatisthesong.service.AuddService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -19,10 +16,9 @@ public class SongController {
     @Autowired
     private AuddService auddService;
 
-    @GetMapping("/byLyrics")
-    public Song getSongByLyrics(String lyrics) {
-        // TODO some func that find song
-        return null;
+    @GetMapping("/searchByLyrics")
+    public Song getSongByLyrics(@RequestParam("l") String lyrics) {
+        return auddService.findSongByLyrics(lyrics);
     }
 
     /**
@@ -34,9 +30,7 @@ public class SongController {
     @PostMapping(value = "/searchByFile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Song searchByFile(@RequestPart("file") MultipartFile file) throws IOException {
         log.debug("Received file size: {}", file.getSize());
-
-        return auddService.findMusicByFile(file.getResource());
+        return auddService.findSongByFile(file.getResource());
     }
-
 
 }

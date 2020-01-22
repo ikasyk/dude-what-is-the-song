@@ -3,6 +3,8 @@ package org.int20h.dudewhatisthesong.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class AuddMusicRecongnitionResponse {
     private String status;
