@@ -13,6 +13,4 @@ public class Song {
     private String album;
 
     private String appleMusicLink;
-
-    private String lyrics;
 }
