@@ -1,6 +1,7 @@
 package org.int20h.dudewhatisthesong.service;
 
 import org.int20h.dudewhatisthesong.entity.Song;
+import org.int20h.dudewhatisthesong.model.AuddMusicRecongnitionByLyricsResult;
 import org.int20h.dudewhatisthesong.model.AuddMusicRecongnitionResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,13 +46,30 @@ public class AuddService {
         requestsHelper.fixRequestUserAgent(headers);
 
         HttpEntity<?> httpEntity = new HttpEntity<>(params, headers);
-        ResponseEntity<AuddMusicRecongnitionResponse> response = restTemplate.exchange(
+        ResponseEntity<AuddMusicRecongnitionByLyricsResult> response = restTemplate.exchange(
                 auddBaseUrl + auddFindByLyricsUrl,
                 HttpMethod.POST,
                 httpEntity,
-                AuddMusicRecongnitionResponse.class);
+                AuddMusicRecongnitionByLyricsResult.class);
 
-        return mapAuddResponseToSong(response.getBody());
+        AuddMusicRecongnitionByLyricsResult body = response.getBody();
+
+        AuddMusicRecongnitionByLyricsResult.Result[] results = body.getResult();
+        if (results.length == 0) {
+            return null;
+        }
+
+        AuddMusicRecongnitionByLyricsResult.Result result = results[0];
+
+        Song song = new Song(
+                result.getArtist(),
+                result.getTitle(),
+                null,
+                null,
+                result.getLyrics()
+        );
+
+        return song;
     }
 
     public Song findSongByFile(Resource resource) {
@@ -82,7 +100,9 @@ public class AuddService {
                 result.getArtist(),
                 result.getTitle(),
                 result.getAlbum(),
-                result.getAppleMusic().getUrl()
+                result.getAppleMusic().getUrl(),
+                null
         );
     }
+
 }

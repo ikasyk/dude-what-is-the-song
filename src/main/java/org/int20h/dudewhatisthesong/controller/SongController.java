@@ -1,5 +1,6 @@
 package org.int20h.dudewhatisthesong.controller;
 
+import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.int20h.dudewhatisthesong.entity.Song;
 import org.int20h.dudewhatisthesong.service.AuddService;
@@ -11,24 +12,32 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
 @RestController
+@Api(value = "/song", description = "Songs main controller")
+@RequestMapping("/song")
 @Slf4j
 public class SongController {
     @Autowired
     private AuddService auddService;
 
     @GetMapping("/searchByLyrics")
-    public Song getSongByLyrics(@RequestParam("l") String lyrics) {
+    @ApiOperation(value = "Finds music in Audd API by lyrics. Returns song data (artist, title)",
+            response = Song.class)
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Result with information of song (artist, title, lyrics)")
+    })
+    public Song getSongByLyrics(@ApiParam(value = "Lyrics of song")
+                                @RequestParam("l") String lyrics) {
         return auddService.findSongByLyrics(lyrics);
     }
 
-    /**
-     * Finds music in Audd API by file
-     * @param file music file in supported format (mp3, m4a, ogg etc.)
-     * @return song data (artist, album, title, Apple Music link)
-     * @throws IOException when exception in file
-     */
     @PostMapping(value = "/searchByFile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Song searchByFile(@RequestPart("file") MultipartFile file) throws IOException {
+    @ApiOperation(value = "Finds music in Audd API by file. Returns song data (artist, album, title, Apple Music link)",
+            response = Song.class)
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Result with information of song (artist, album, title, Apple Music link)")
+    })
+    public Song searchByFile(@ApiParam(value = "Record of music in supported format (mp3, m4a, ogg etc.)")
+                             @RequestPart("file") MultipartFile file) throws IOException {
         log.debug("Received file size: {}", file.getSize());
         return auddService.findSongByFile(file.getResource());
     }
