@@ -8,3 +8,4 @@ Description of endpoints is available here: https://dude-what-is-the-song.heroku
 
 To start application, build and run the main class `org.int20h.dudewhatisthesong.Application`.
 
+Application URL: https://artembernatskyy.github.io/whats-da-song/
