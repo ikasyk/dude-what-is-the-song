@@ -1,7 +1,9 @@
 package org.int20h.dudewhatisthesong.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import lombok.extern.slf4j.Slf4j;
 import org.int20h.dudewhatisthesong.entity.Song;
+import org.int20h.dudewhatisthesong.exception.SongNotFoundException;
 import org.int20h.dudewhatisthesong.model.AuddMusicRecongnitionByFileResponse;
 import org.int20h.dudewhatisthesong.model.AuddMusicRecongnitionByLyricsResponse;
 import org.int20h.dudewhatisthesong.utils.AuddUtils;
@@ -17,8 +19,8 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Arrays;
 
 @Service
+@Slf4j
 public class AuddService {
-
     @Value("${audd.base-url}")
     public String auddBaseUrl;
 
@@ -58,7 +60,13 @@ public class AuddService {
                 httpEntity,
                 AuddMusicRecongnitionByLyricsResponse.class);
 
-        return mapAuddsFindByLyricsResponse(response.getBody());
+        AuddMusicRecongnitionByLyricsResponse body = response.getBody();
+
+        if (body.getResult() == null || body.getResult().isEmpty()) {
+            throw new SongNotFoundException("Song is not found");
+        }
+
+        return mapAuddsFindByLyricsResponse(body);
     }
 
     public Song findSongByFile(Resource resource) {
@@ -79,11 +87,23 @@ public class AuddService {
                 httpEntity,
                 AuddMusicRecongnitionByFileResponse.class);
 
-        return mapAuddsFindByFileResponse(response.getBody());
+        AuddMusicRecongnitionByFileResponse body = response.getBody();
+
+        if (body.getResult() == null) {
+            throw new SongNotFoundException("Song is not found");
+        }
+
+        return mapAuddsFindByFileResponse(body);
     }
 
     private Song mapAuddsFindByFileResponse(AuddMusicRecongnitionByFileResponse response) {
         AuddMusicRecongnitionByFileResponse.Result result = response.getResult();
+
+        log.debug("Response status: {}", response.getStatus());
+
+        if (result == null){
+            return null;
+        }
 
         return new Song(
                 result.getArtist(),

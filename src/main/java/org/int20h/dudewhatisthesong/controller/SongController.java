@@ -23,7 +23,8 @@ public class SongController {
     @ApiOperation(value = "Finds music in Audd API by lyrics. Returns song data (artist, title)",
             response = Song.class)
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Result with information of song (artist, title, lyrics)")
+            @ApiResponse(code = 200, message = "Result with information of song (artist, title, lyrics)"),
+            @ApiResponse(code = 404, message = "On error during recognition")
     })
     public Song getSongByLyrics(@ApiParam(value = "Lyrics of song")
                                 @RequestParam("l") String lyrics) {
@@ -34,12 +35,12 @@ public class SongController {
     @ApiOperation(value = "Finds music in Audd API by file. Returns song data (artist, album, title, Apple Music link)",
             response = Song.class)
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Result with information of song (artist, album, title, Apple Music link)")
+            @ApiResponse(code = 200, message = "Result with information of song (artist, album, title, Apple Music link)"),
+            @ApiResponse(code = 404, message = "On error during recognition")
     })
     public Song searchByFile(@ApiParam(value = "Record of music in supported format (mp3, m4a, ogg etc.)")
                              @RequestPart("file") MultipartFile file) throws IOException {
         log.debug("Received file size: {}", file.getSize());
         return auddService.findSongByFile(file.getResource());
     }
-
 }
