@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class AuddMusicRecongnitionResponse {
+public class AuddMusicRecongnitionByFileResponse {
     private String status;
 
     private Result result;

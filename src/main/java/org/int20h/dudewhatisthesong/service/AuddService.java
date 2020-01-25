@@ -1,7 +1,10 @@
 package org.int20h.dudewhatisthesong.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.int20h.dudewhatisthesong.entity.Song;
-import org.int20h.dudewhatisthesong.model.AuddMusicRecongnitionResponse;
+import org.int20h.dudewhatisthesong.model.AuddMusicRecongnitionByFileResponse;
+import org.int20h.dudewhatisthesong.model.AuddMusicRecongnitionByLyricsResponse;
+import org.int20h.dudewhatisthesong.utils.AuddUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -11,7 +14,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Objects;
+import java.util.Arrays;
 
 @Service
 public class AuddService {
@@ -34,9 +37,13 @@ public class AuddService {
     @Autowired
     private RequestsHelper requestsHelper;
 
+    @Autowired
+    private AuddUtils auddUtils;
+
     public Song findSongByLyrics(String lyrics) {
         MultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
         params.add("q", lyrics);
+        params.add("return", auddMusicServiceList);
         params.add("api_token", auddApiToken);
 
         HttpHeaders headers = new HttpHeaders();
@@ -45,13 +52,13 @@ public class AuddService {
         requestsHelper.fixRequestUserAgent(headers);
 
         HttpEntity<?> httpEntity = new HttpEntity<>(params, headers);
-        ResponseEntity<AuddMusicRecongnitionResponse> response = restTemplate.exchange(
+        ResponseEntity<AuddMusicRecongnitionByLyricsResponse> response = restTemplate.exchange(
                 auddBaseUrl + auddFindByLyricsUrl,
                 HttpMethod.POST,
                 httpEntity,
-                AuddMusicRecongnitionResponse.class);
+                AuddMusicRecongnitionByLyricsResponse.class);
 
-        return mapAuddResponseToSong(response.getBody());
+        return mapAuddsFindByLyricsResponse(response.getBody());
     }
 
     public Song findSongByFile(Resource resource) {
@@ -66,23 +73,40 @@ public class AuddService {
         requestsHelper.fixRequestUserAgent(headers);
 
         HttpEntity<?> httpEntity = new HttpEntity<>(params, headers);
-        ResponseEntity<AuddMusicRecongnitionResponse> response = restTemplate.exchange(
+        ResponseEntity<AuddMusicRecongnitionByFileResponse> response = restTemplate.exchange(
                 auddBaseUrl,
                 HttpMethod.POST,
                 httpEntity,
-                AuddMusicRecongnitionResponse.class);
+                AuddMusicRecongnitionByFileResponse.class);
 
-        return mapAuddResponseToSong(response.getBody());
+        return mapAuddsFindByFileResponse(response.getBody());
     }
 
-    private Song mapAuddResponseToSong(AuddMusicRecongnitionResponse response) {
-        AuddMusicRecongnitionResponse.Result result = response.getResult();
+    private Song mapAuddsFindByFileResponse(AuddMusicRecongnitionByFileResponse response) {
+        AuddMusicRecongnitionByFileResponse.Result result = response.getResult();
 
         return new Song(
                 result.getArtist(),
                 result.getTitle(),
                 result.getAlbum(),
-                result.getAppleMusic().getUrl()
-        );
+                result.getAppleMusic().getUrl());
+
+    }
+
+    private Song mapAuddsFindByLyricsResponse(AuddMusicRecongnitionByLyricsResponse response) {
+        AuddMusicRecongnitionByLyricsResponse.Result result = response.getResult().get(0);
+
+        try {
+            result.setParsedMedia(Arrays.asList(auddUtils.parseMedia(result.getMedia())));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        return new Song(
+                result.getArtist(),
+                result.getTitle(),
+                result.getAlbum(),
+                result.getParsedMedia().get(0).getUrl());
+
     }
 }
