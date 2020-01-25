@@ -5,5 +5,8 @@ logging:
 audd:
   api-token: "bfa7849931436dea6e7476aaccf0d525"
   base-url: "https://api.audd.io"
-  find-by-lyrics-url: "/findLyrics/"
   return-music-service-list-url: "apple_music,deezer,spotify"
+  path:
+    find-by-lyrics: "findLyrics"
+    recognize-with-offset: "recognizeWithOffset"
+

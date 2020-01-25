@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.int20h.dudewhatisthesong.entity.Song;
 import org.int20h.dudewhatisthesong.exception.SongNotFoundException;
+import org.int20h.dudewhatisthesong.model.AuddMusicHummingRecognitionResult;
 import org.int20h.dudewhatisthesong.model.AuddMusicRecongnitionByFileResponse;
 import org.int20h.dudewhatisthesong.model.AuddMusicRecongnitionByLyricsResponse;
 import org.int20h.dudewhatisthesong.utils.AuddUtils;
@@ -24,8 +25,11 @@ public class AuddService {
     @Value("${audd.base-url}")
     public String auddBaseUrl;
 
-    @Value("${audd.find-by-lyrics-url}")
-    public String auddFindByLyricsUrl;
+    @Value("${audd.path.find-by-lyrics}")
+    public String auddFindByLyricsPath;
+
+    @Value("${audd.path.recognize-with-offset}")
+    public String auddFindByHummingPath;
 
     @Value("${audd.return-music-service-list-url}")
     public String auddMusicServiceList;
@@ -55,7 +59,7 @@ public class AuddService {
 
         HttpEntity<?> httpEntity = new HttpEntity<>(params, headers);
         ResponseEntity<AuddMusicRecongnitionByLyricsResponse> response = restTemplate.exchange(
-                auddBaseUrl + auddFindByLyricsUrl,
+                buildRequestUrl(auddFindByLyricsPath),
                 HttpMethod.POST,
                 httpEntity,
                 AuddMusicRecongnitionByLyricsResponse.class);
@@ -90,10 +94,47 @@ public class AuddService {
         AuddMusicRecongnitionByFileResponse body = response.getBody();
 
         if (body.getResult() == null) {
-            throw new SongNotFoundException("Song is not found");
+            return findSongByHumming(resource);
         }
 
         return mapAuddsFindByFileResponse(body);
+    }
+
+    public Song findSongByHumming(Resource resource) {
+        MultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
+        params.add("file", resource);
+        params.add("return", auddMusicServiceList);
+        params.add("api_token", auddApiToken);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        requestsHelper.fixRequestUserAgent(headers);
+
+        HttpEntity<?> httpEntity = new HttpEntity<>(params, headers);
+        ResponseEntity<AuddMusicHummingRecognitionResult> response = restTemplate.exchange(
+                buildRequestUrl(auddFindByHummingPath),
+                HttpMethod.POST,
+                httpEntity,
+                AuddMusicHummingRecognitionResult.class);
+
+        AuddMusicHummingRecognitionResult body = response.getBody();
+
+        if (body.getResult() == null){
+            throw new SongNotFoundException("Song is not found");
+        }
+
+        AuddMusicHummingRecognitionResult.Result result = body.getResult();
+
+        if (result.getList().length == 0){
+            throw new SongNotFoundException("Song is not found");
+        }
+
+        AuddMusicHummingRecognitionResult.Result.SongResult songResult = result.getList()[0];
+
+        Song song = new Song(songResult.getArtist(), songResult.getTitle(), null, null);
+
+        return song;
     }
 
     private Song mapAuddsFindByFileResponse(AuddMusicRecongnitionByFileResponse response) {
@@ -128,5 +169,9 @@ public class AuddService {
                 result.getAlbum(),
                 result.getParsedMedia().get(0).getUrl());
 
+    }
+
+    private String buildRequestUrl(String path){
+        return auddBaseUrl + "/" + path + "/";
     }
 }

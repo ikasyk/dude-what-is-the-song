@@ -9,8 +9,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-
 @RestController
 @Api(value = "/song", description = "Songs main controller")
 @RequestMapping("/song")
@@ -32,14 +30,14 @@ public class SongController {
     }
 
     @PostMapping(value = "/searchByFile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ApiOperation(value = "Finds music in Audd API by file. Returns song data (artist, album, title, Apple Music link)",
+    @ApiOperation(value = "Finds music in Audd API by file. Returns song data (artist, album, title, Apple Music link). If file is not recognized as music - then it checks it as humming.",
             response = Song.class)
     @ApiResponses({
             @ApiResponse(code = 200, message = "Result with information of song (artist, album, title, Apple Music link)"),
             @ApiResponse(code = 404, message = "On error during recognition")
     })
-    public Song searchByFile(@ApiParam(value = "Record of music in supported format (mp3, m4a, ogg etc.)")
-                             @RequestPart("file") MultipartFile file) throws IOException {
+    public Song searchByFile(@ApiParam(value = "Record of music or sound in supported format (mp3, m4a, ogg etc.)")
+                             @RequestPart("file") MultipartFile file) {
         log.debug("Received file size: {}", file.getSize());
         return auddService.findSongByFile(file.getResource());
     }
